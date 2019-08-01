@@ -1,0 +1,36 @@
+#!/bin/bash
+#Run command as bash script_name
+#Else it will run infinite loop as sh can't identify let command.
+if [ $# -eq 0 ]; then
+    echo >&2 "Usage: jstackSeries <pid> [ <count> [ <delay> ] ]"
+    echo >&2 "    Defaults: count = 10, delay = 1 (seconds)"
+    exit 1
+fi
+pid=$1
+count=${2:-3}  # defaults to 3 times
+delay=${3:-5} # defaults to 5 seconds
+ctime=$(date +%m-%d-%Y-%H-%M)
+
+#Get tomcat process_id
+#tomcat_pid() {
+#	echo `ps aux|grep java | grep -w $prog|grep -v grep|tr -s ' '|cut -d ' ' -f2 | tail -1`
+#}
+#pid=$(tomcat_pid)
+if [ -x "$(command -v jstack)" ]; then
+	while [ $count -gt 0 ]
+		do
+			sudo -u tomcat jstack -l $pid >>jstack.$pid.$ctime
+		    sleep $delay
+		    let count--
+		    echo -n "."
+		done
+else
+	echo "jstack command not found, generationg thread dump with kill command"
+	while [ $count -gt 0 ]
+			do
+				sudo -u tomcat kill -3 $pid >>thread_dump.$pid.$ctime
+			    sleep $delay
+			    let count--
+			    echo -n "."
+			done
+fi
